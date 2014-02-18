@@ -1,6 +1,11 @@
 package com.pwootage.lwjgl.utils.textures;
 
-import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL11.GL_QUADS;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
+import static org.lwjgl.opengl.GL11.glBegin;
+import static org.lwjgl.opengl.GL11.glEnd;
+import static org.lwjgl.opengl.GL11.glTexCoord2f;
+import static org.lwjgl.opengl.GL11.glVertex2f;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -282,5 +287,16 @@ public class Texture {
 		
 		glEnd();
 		GL11.glPopMatrix();
+	}
+	
+	public void update(int[] pixels) {
+		if (pixels.length != width * height) {
+			throw new IllegalArgumentException("Array was of wrong length for this texture!");
+		}
+		dataInt = ByteBuffer.allocateDirect(pixels.length * 4).asIntBuffer();
+		dataInt.put(pixels);
+		dataInt.flip();
+		texID = bindToTexture();
+		dataInt = null;
 	}
 }
