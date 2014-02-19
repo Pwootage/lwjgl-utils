@@ -81,42 +81,6 @@ public class Texture {
 	}
 	
 	/**
-	 * Re-puts the pixels to the texture
-	 * 
-	 * @param pixels
-	 *            Pixels to put
-	 */
-	public void rebind(int[] pixels) {
-		dataInt = ByteBuffer.allocateDirect(pixels.length * 4).asIntBuffer();
-		dataInt.put(pixels);
-		dataInt.flip();
-		bindData(texID);
-		dataInt = null;
-	}
-	
-	/**
-	 * Binds this texture to a new OpenGL texture
-	 * 
-	 * @return The new OpenGL texture ID
-	 */
-	private int bindToTexture() {
-		int tex = GL11.glGenTextures();
-		bindData(tex);
-		return tex;
-	}
-	
-	private void bindData(int tex) {
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, tex);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST); // Linear Filtering
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST); // Linear Filtering
-		if (data != null) {
-			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, width, height, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, data);
-		} else if (dataInt != null) {
-			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, width, height, 0, GL11.GL_RGBA, GL12.GL_UNSIGNED_INT_8_8_8_8_REV, dataInt);
-		}
-	}
-	
-	/**
 	 * Calls glBindTexture(GL_TEXTURE_2D, textureID)
 	 */
 	public void glBindTexture() {
@@ -289,14 +253,50 @@ public class Texture {
 		GL11.glPopMatrix();
 	}
 	
-	public void update(int[] pixels) {
+	public void update(int[] pixels, int xOff, int yOff, int width, int height) {
 		if (pixels.length != width * height) {
 			throw new IllegalArgumentException("Array was of wrong length for this texture!");
+		}
+		if (xOff + width > this.width || yOff + height > this.height) {
+			throw new IllegalArgumentException("Cannot update texture: would go out of bounds.");
 		}
 		dataInt = ByteBuffer.allocateDirect(pixels.length * 4).asIntBuffer();
 		dataInt.put(pixels);
 		dataInt.flip();
-		texID = bindToTexture();
+		updateData(texID, xOff, yOff, width, height);
 		dataInt = null;
+	}
+	
+	/**
+	 * Binds this texture to a new OpenGL texture
+	 * 
+	 * @return The new OpenGL texture ID
+	 */
+	private int bindToTexture() {
+		int tex = GL11.glGenTextures();
+		bindData(tex);
+		return tex;
+	}
+	
+	private void bindData(int tex) {
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, tex);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST); // Linear Filtering
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST); // Linear Filtering
+		if (data != null) {
+			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, width, height, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, data);
+		} else if (dataInt != null) {
+			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, width, height, 0, GL11.GL_RGBA, GL12.GL_UNSIGNED_INT_8_8_8_8_REV, dataInt);
+		}
+	}
+	
+	private void updateData(int tex, int xOff, int yOff, int width, int height) {
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, tex);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST); // Linear Filtering
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST); // Linear Filtering
+		if (data != null) {
+			GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, xOff, yOff, width, height, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, data);
+		} else if (dataInt != null) {
+			GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, xOff, yOff, width, height, GL11.GL_RGBA, GL12.GL_UNSIGNED_INT_8_8_8_8_REV, dataInt);
+		}
 	}
 }
